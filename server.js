@@ -22,6 +22,9 @@ app.get("/timestamp", function (req, res) {
   res.sendFile(__dirname + '/views/timestamp.html');
 });
 
+app.get("/headerparser", function (req, res) {
+  res.sendFile(__dirname + '/views/headerparser.html');
+});
 
 // your first API endpoint... 
 app.get("/api/hello", function (req, res) {
@@ -68,6 +71,14 @@ app.get("/api/timestamp/:date_string", (req, res) => {
       utc: utcTime
     });
   }
+});
+
+app.get("/api/whoami", (req, res) => {
+  res.json({
+    ipaddress: req.ip,
+    language: req.headers['accept-language'],
+    software: req.headers['user-agent']
+  });
 });
 
 
