@@ -112,6 +112,12 @@ app.get("/api/whoami", (req, res) => {
 
 app.post("/api/shorturl/new", (req, res) => {
 	console.log("REQUEST " + req.body.url);
+	if (!isValidUrl(req.body.url)) {
+		res.json({
+			error: 'invalid url'
+		});
+		return;
+	}
 	let originalUrl = req.body.url;
 	let suffix = shortid.generate();
 	let shorUrl = __dirname + '/api/shorturl/' + suffix;
@@ -143,10 +149,15 @@ app.get("/api/shorturl/:suffix", (req, res) => {
 			return;
 		}
 		console.log(record);
-		res.redirect( record.original_url)
+		res.redirect(record.original_url)
 	})
-	
+
 });
+
+const isValidUrl = (url) => {
+	const urlPattern = new RegExp("(http|ftp|https)://[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:/~+#-]*[\w@?^=%&amp;/~+#-])?");
+	return urlPattern.test(url);
+}
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
