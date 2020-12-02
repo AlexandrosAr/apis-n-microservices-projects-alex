@@ -16,8 +16,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 const UrlSchema = mongoose.Schema({
 	original_url: { type: String },
-	short_url: { type: String },
-	suffix: { type: String }
+	short_url: { type: String }
 });
 
 const Url = mongoose.model('Url', UrlSchema);
@@ -119,12 +118,10 @@ app.post("/api/shorturl/new", (req, res) => {
 		return;
 	}
 	let originalUrl = req.body.url;
-	let suffix = shortid.generate();
-	let shorUrl = __dirname + '/api/shorturl/' + suffix;
+	let shortUrl = shortid.generate(); 
 	let newUrl = new Url({
 		original_url: originalUrl,
-		short_url: shorUrl,
-		suffix: suffix
+		short_url: shortUrl
 	});
 
 	newUrl.save((err) => {
@@ -135,15 +132,14 @@ app.post("/api/shorturl/new", (req, res) => {
 		console.log('Save successfull');
 		res.json({
 			original_url: newUrl.original_url,
-			short_url: newUrl.short_url,
-			suffix: newUrl.suffix
+			short_url: newUrl.short_url
 		});
 	});
 });
 
-app.get("/api/shorturl/:suffix", (req, res) => {
-	let suffix = req.params.suffix;
-	Url.findOne({ suffix: suffix }, (err, record) => {
+app.get("/api/shorturl/:short_url", (req, res) => {
+	let short_url = req.params.short_url;
+	Url.findOne({ short_url: short_url }, (err, record) => {
 		if (err) {
 			console.error(err);
 			return;
