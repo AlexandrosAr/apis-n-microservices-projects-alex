@@ -10,6 +10,7 @@ const mongo = require('mongodb');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const shortid = require('shortid');
+const validUrl = require('valid-url');
 
 /* Initialize MongoDB create schema and Model */
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -109,51 +110,67 @@ app.get("/api/whoami", (req, res) => {
 
 /* fcc url shortner */
 
-app.post("/api/shorturl/new", (req, res) => {
+app.post("/api/shorturl/new", async (req, res) => {
 	console.log("REQUEST " + req.body.url);
-	if (!isValidUrl(req.body.url)) {
+	if (!validUrl.isWebUri(req.body.url)) {
 		res.json({
 			error: 'invalid url'
 		});
 		return;
 	}
-	let originalUrl = req.body.url;
-	let shortUrl = shortid.generate(); 
-	let newUrl = new Url({
-		original_url: originalUrl,
-		short_url: shortUrl
-	});
 
-	newUrl.save((err) => {
-		if (err) {
-			console.error(err);
-			return;
+	try {
+		let originalUrl = req.body.url;
+		let findOne = await Url.findOne({ original_url: originalUrl });
+
+		if (findOne) {
+			res.json({
+				original_url: findOne.original_url,
+				short_url: findOne.short_url
+			})
+		} else {
+			let shortUrl = shortid.generate();
+			let newUrl = new Url({
+				original_url: originalUrl,
+				short_url: shortUrl
+			});
+
+			newUrl.save((err) => {
+				if (err) {
+					console.error(err);
+					return;
+				}
+				console.log('Save successfull');
+				res.json({
+					original_url: newUrl.original_url,
+					short_url: newUrl.short_url
+				});
+			});
 		}
-		console.log('Save successfull');
-		res.json({
-			original_url: newUrl.original_url,
-			short_url: newUrl.short_url
-		});
-	});
+	} catch (err) {
+		console.log(err);
+	}
+
 });
 
 app.get("/api/shorturl/:short_url", (req, res) => {
-	let short_url = req.params.short_url;
-	Url.findOne({ short_url: short_url }, (err, record) => {
-		if (err) {
-			console.error(err);
-			return;
-		}
-		console.log(record);
-		res.redirect(record.original_url)
-	})
+	try {
+		let short_url = req.params.short_url;
+		Url.findOne({ short_url: short_url }, (err, record) => {
+			if (err) {
+				console.error(err);
+				return;
+			}
+			console.log(record);
+			res.redirect(record.original_url)
+		});
+	} catch(err) {
+		console.log(err);
+	}
+	
 
 });
 
-const isValidUrl = (url) => {
-	const urlPattern = new RegExp("(http|ftp|https)://[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:/~+#-]*[\w@?^=%&amp;/~+#-])?");
-	return urlPattern.test(url);
-}
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
