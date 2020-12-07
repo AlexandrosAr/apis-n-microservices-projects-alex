@@ -20,7 +20,12 @@ const UrlSchema = mongoose.Schema({
 	short_url: { type: String }
 });
 
+const UserSchema = mongoose.Schema({
+	username: { type: String }
+})
+
 const Url = mongoose.model('Url', UrlSchema);
+const User = mongoose.model('User', UserSchema);
 
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
@@ -49,6 +54,10 @@ app.get("/headerparser", function (req, res) {
 
 app.get("/url-shortener", function (req, res) {
 	res.sendFile(__dirname + '/views/urlshortener.html');
+});
+
+app.get("/exercise-tracker", function (req, res) {
+	res.sendFile(__dirname + '/views/exercisetracker.html');
 });
 
 // your first API endpoint... 
@@ -164,12 +173,41 @@ app.get("/api/shorturl/:short_url", (req, res) => {
 			console.log(record);
 			res.redirect(record.original_url)
 		});
-	} catch(err) {
+	} catch (err) {
 		console.log(err);
 	}
-	
-
 });
+
+/* fcc exercise tracker */
+
+app.post("/api/exercise/new-user", async (req, res) => {
+	let usrname = req.body.username;
+	try {
+		let findUser = await Url.findOne({ username: usrname });
+		if (findUser) {
+			res.send('Username already taken');
+		} else {
+			let newUser = new User({
+				username: usrname
+			});
+			newUser.save((err, result) => {
+				if (err) {
+					console.log(err);
+					return;
+				} else {
+					console.log('Save successfull');
+					res.json({
+						username: result.username,
+						_id: result._id
+					});
+				}
+			})
+		}
+
+	} catch (err) {
+		console.log(err);
+	}
+})
 
 
 // listen for requests :)
