@@ -20,12 +20,21 @@ const UrlSchema = mongoose.Schema({
 	short_url: { type: String }
 });
 
+const exerciseSchema = new mongoose.Schema({
+	description: { type: String, required: true },
+	duration: { type: Number, required: true },
+	date: { type: String }
+});
+
 const UserSchema = mongoose.Schema({
-	username: { type: String }
-})
+	username: { type: String, required: true },
+	log: [exerciseSchema]
+});
 
 const Url = mongoose.model('Url', UrlSchema);
+const Exercise = mongoose.model('Exercise', exerciseSchema);
 const User = mongoose.model('User', UserSchema);
+
 
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
@@ -183,8 +192,9 @@ app.get("/api/shorturl/:short_url", (req, res) => {
 app.post("/api/exercise/new-user", async (req, res) => {
 	let usrname = req.body.username;
 	try {
-		let findUser = await Url.findOne({ username: usrname });
-		if (findUser) {
+		let foundUser = await User.findOne({ username: usrname });
+		console.log(foundUser);
+		if (foundUser) {
 			res.send('Username already taken');
 		} else {
 			let newUser = new User({
@@ -201,7 +211,7 @@ app.post("/api/exercise/new-user", async (req, res) => {
 						_id: result._id
 					});
 				}
-			})
+			});
 		}
 
 	} catch (err) {
@@ -209,6 +219,84 @@ app.post("/api/exercise/new-user", async (req, res) => {
 	}
 })
 
+app.post("/api/exercise/add", async (req, res) => {
+	let userId = req.body.userId;
+	let date = req.body.date;
+	console.log('test' + date);
+
+	if (!date || !(Date.parse(date) > 0)) {
+		let date_ob = new Date();
+		let day = ("0" + date_ob.getDate()).slice(-2);
+		let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+		let year = date_ob.getFullYear();
+		date = year + "-" + month + "-" + day;
+		console.log('test 1 ' + date);
+	}
+
+	let exercise = new Exercise({
+		description: req.body.description,
+		duration: parseInt(req.body.duration),
+		date: date
+	});
+
+	try {
+		console.log(exercise);
+		let foundUser = await User.findByIdAndUpdate(userId, { $push: { log: exercise } }, { new: true });
+		console.log(foundUser);
+		let response = {
+			_id: foundUser._id,
+			username: foundUser.username,
+			description: exercise.description,
+			duration: exercise.duration,
+			date: new Date(exercise.date).toDateString()
+		}
+		res.json(response);
+	} catch (err) {
+		console.log(err);
+	}
+
+})
+
+app.get("/api/exercise/users", async (req, res) => {
+	let users = await User.find({}).select('username _id');
+	console.log(users);
+
+	res.json(users);
+
+})
+
+app.get("/api/exercise/log", async (req, res) => {
+	let result = await User.findById(req.query.userId);
+	let logs = result.log;
+
+	if (req.query.limit) {
+		logs = result.log.slice(0, req.query.limit);
+	}
+
+	if (req.query.from) {
+		let fromDate = new Date(req.query.from);
+		logs = logs.filter(l => {
+			let ldate = new Date(l.date)
+			return ldate.getTime() >= fromDate.getTime();
+		});
+	}
+
+	if (req.query.to) {
+		let toDate = new Date(req.query.to);
+		logs = logs.filter(l => {
+			let ldate = new Date(l.date)
+			return ldate.getTime() <= toDate.getTime();
+		});
+	}
+
+	let response = {
+		_id: result._id,
+		username: result.username,
+		log: logs,
+		count: logs.length
+	}
+	res.json(response);
+})
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
