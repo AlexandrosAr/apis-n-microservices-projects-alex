@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const shortid = require('shortid');
 const validUrl = require('valid-url');
+const multer  = require('multer');
 
 /* Initialize MongoDB create schema and Model */
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -302,6 +303,15 @@ app.get("/api/exercise/log", async (req, res) => {
 	res.json(response);
 })
 
+/* File Metadata */
+
+app.post("/api/fileanalyse", multer().single('upfile'), (req, res) => {
+	res.json({
+		name: req.file.originalname,
+		type: req.file.mimetype,
+		size: req.file.size
+	})
+})
 // listen for requests :)
 var listener = app.listen(port, function () {
 	console.log('Your app is listening on port ' + listener.address().port);
