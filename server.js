@@ -305,7 +305,7 @@ app.get("/api/exercise/log", async (req, res) => {
 
 /* File Metadata */
 
-app.post("/api/fileanalyse", multer().single('upfile'), (req, res) => {
+app.post("/file-metadata/api/fileanalyse", multer().single('upfile'), (req, res) => {
 	res.json({
 		name: req.file.originalname,
 		type: req.file.mimetype,
