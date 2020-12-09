@@ -69,6 +69,10 @@ app.get("/exercise-tracker", function (req, res) {
 	res.sendFile(__dirname + '/views/exercisetracker.html');
 });
 
+app.get("/file-metadata", function (req, res) {
+	res.sendFile(__dirname + '/views/filemetadata.html');
+});
+
 // your first API endpoint... 
 app.get("/api/hello", function (req, res) {
 	res.json({ greeting: 'hello API' });
@@ -299,6 +303,6 @@ app.get("/api/exercise/log", async (req, res) => {
 })
 
 // listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
+var listener = app.listen(port, function () {
 	console.log('Your app is listening on port ' + listener.address().port);
 });
